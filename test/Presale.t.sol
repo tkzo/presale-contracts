@@ -10,12 +10,9 @@ contract PresaleTest is Test {
     address public usd;
     uint256 public amount = 5000e18;
     address public claimer = 0x45953D7FB14419FedF06A32deFC5C2B45f1F5a1F;
-    bytes32 public immutable root =
-        0xce8e184cf3ed01b7f16b08d4ba454fdbd37be45ea22d885692ef8ff0e383a8e8;
-    bytes32 public immutable correct_proof =
-        0xb92c48e9d7abe27fd8dfd6b5dfdbfb1c9a463f80c712b66f3a5180a090cccafc;
-    bytes32 public immutable wrong_proof =
-        0xb92c48e9d7abe27fd8dfd6b5dfdbfb1c9a463f80c712b66f3a5180a090cccaff;
+    bytes32 public immutable root = 0xce8e184cf3ed01b7f16b08d4ba454fdbd37be45ea22d885692ef8ff0e383a8e8;
+    bytes32 public immutable correct_proof = 0xb92c48e9d7abe27fd8dfd6b5dfdbfb1c9a463f80c712b66f3a5180a090cccafc;
+    bytes32 public immutable wrong_proof = 0xb92c48e9d7abe27fd8dfd6b5dfdbfb1c9a463f80c712b66f3a5180a090cccaff;
 
     error VerifyFailed();
     error OverLimit();
@@ -30,13 +27,7 @@ contract PresaleTest is Test {
     function setUp() public {
         usd = address(new MockERC20("USD", "USD"));
         IERC20(usd).transfer(claimer, amount);
-        presale = new Presale(
-            root,
-            address(usd),
-            address(0x42),
-            block.timestamp + 1,
-            block.timestamp + 1 days
-        );
+        presale = new Presale(root, address(usd), address(0x42), block.timestamp + 1, block.timestamp + 1 days);
     }
 
     function test_Buy() public {
@@ -91,11 +82,7 @@ contract PresaleTest is Test {
         proof[0] = correct_proof;
         vm.startPrank(claimer);
         IERC20(usd).approve(address(presale), 1);
-        vm.store(
-            address(presale),
-            bytes32(uint256(3)),
-            bytes32(uint256(presale.TOTAL_LIMIT()))
-        );
+        vm.store(address(presale), bytes32(uint256(3)), bytes32(uint256(presale.TOTAL_LIMIT())));
         vm.warp(block.timestamp + 1);
         vm.expectRevert(OverTotalLimit.selector);
         presale.buy(proof, amount, 1);

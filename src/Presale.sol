@@ -25,13 +25,7 @@ contract Presale is ReentrancyGuard, Ownable {
     error NotStarted();
     error Ended();
 
-    constructor(
-        bytes32 _root,
-        address _usd,
-        address _treasury,
-        uint256 _start,
-        uint256 _end
-    ) Ownable(msg.sender) {
+    constructor(bytes32 _root, address _usd, address _treasury, uint256 _start, uint256 _end) Ownable(msg.sender) {
         root = _root;
         usd = _usd;
         treasury = _treasury;
@@ -39,18 +33,12 @@ contract Presale is ReentrancyGuard, Ownable {
         end = _end;
     }
 
-    function buy(
-        bytes32[] memory _proof,
-        uint256 _maxAmount,
-        uint256 _amount
-    ) external nonReentrant {
+    function buy(bytes32[] memory _proof, uint256 _maxAmount, uint256 _amount) external nonReentrant {
         if (block.timestamp < start) revert NotStarted();
         if (block.timestamp > end) revert Ended();
         if (bought[msg.sender] + _amount > _maxAmount) revert OverLimit();
         if (total + _amount > TOTAL_LIMIT) revert OverTotalLimit();
-        bytes32 leaf = keccak256(
-            bytes.concat(keccak256(abi.encode(msg.sender, _maxAmount)))
-        );
+        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, _maxAmount))));
         bool verified = MerkleProof.verify(_proof, root, leaf);
         if (!verified) revert VerifyFailed();
         bool ok = IERC20(usd).transferFrom(msg.sender, treasury, _amount);
