@@ -82,7 +82,7 @@ contract PresaleTest is Test {
         proof[0] = correct_proof;
         vm.startPrank(claimer);
         IERC20(usd).approve(address(presale), 1);
-        vm.store(address(presale), bytes32(uint256(3)), bytes32(uint256(presale.TOTAL_LIMIT())));
+        vm.store(address(presale), bytes32(uint256(2)), bytes32(uint256(presale.TOTAL_LIMIT())));
         vm.warp(block.timestamp + 1);
         vm.expectRevert(OverTotalLimit.selector);
         presale.buy(proof, amount, 1);

@@ -4,9 +4,8 @@ pragma solidity ^0.8.24;
 import "lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
-import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract Presale is ReentrancyGuard, Ownable {
+contract Presale is ReentrancyGuard {
     address public immutable treasury;
     address public immutable usd;
     uint256 public immutable start;
@@ -25,7 +24,7 @@ contract Presale is ReentrancyGuard, Ownable {
     error NotStarted();
     error Ended();
 
-    constructor(bytes32 _root, address _usd, address _treasury, uint256 _start, uint256 _end) Ownable(msg.sender) {
+    constructor(bytes32 _root, address _usd, address _treasury, uint256 _start, uint256 _end) {
         root = _root;
         usd = _usd;
         treasury = _treasury;
