@@ -4,49 +4,59 @@ pragma solidity ^0.8.24;
 import "lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
-import "lib/openzeppelin-contracts/contracts/utils/Pausable.sol";
+import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract BeraBoyzPresale is ReentrancyGuard, Pausable {
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
-    address public constant MAXLONG =
-        0x55d398326f99059fF775485246999027B3197955;
-    bytes32 public immutable root;
-    uint256 public constant LIMIT = 5000 * 1e18;
-    uint256 public constant START = 1630454400;
-    uint256 public constant END = 1630458000;
+contract Presale is ReentrancyGuard, Ownable {
+    address public immutable treasury;
+    address public immutable usd;
+    uint256 public immutable start;
+    uint256 public immutable end;
+    uint256 public constant TOTAL_LIMIT = 500000e18;
+    bytes32 public root;
+    uint256 public total;
     mapping(address => uint256) public bought;
 
     event Buy(address indexed user, uint256 amount);
 
     error VerifyFailed();
     error TransferFailed();
-    error OnlyMaxLong();
     error OverLimit();
+    error OverTotalLimit();
+    error NotStarted();
+    error Ended();
 
-    constructor(bytes32 _root) {
+    constructor(
+        bytes32 _root,
+        address _usd,
+        address _treasury,
+        uint256 _start,
+        uint256 _end
+    ) Ownable(msg.sender) {
         root = _root;
+        usd = _usd;
+        treasury = _treasury;
+        start = _start;
+        end = _end;
     }
 
     function buy(
         bytes32[] memory _proof,
+        uint256 _maxAmount,
         uint256 _amount
     ) external nonReentrant {
-        bool verified = MerkleProof.verify(
-            _proof,
-            root,
-            keccak256(abi.encodePacked(msg.sender))
+        if (block.timestamp < start) revert NotStarted();
+        if (block.timestamp > end) revert Ended();
+        if (bought[msg.sender] + _amount > _maxAmount) revert OverLimit();
+        if (total + _amount > TOTAL_LIMIT) revert OverTotalLimit();
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(msg.sender, _maxAmount)))
         );
+        bool verified = MerkleProof.verify(_proof, root, leaf);
         if (!verified) revert VerifyFailed();
-        if (bought[msg.sender] + _amount > LIMIT) revert OverLimit();
-        bool ok = IERC20(USDT).transferFrom(msg.sender, address(this), _amount);
+        bool ok = IERC20(usd).transferFrom(msg.sender, treasury, _amount);
         if (!ok) revert TransferFailed();
         bought[msg.sender] += _amount;
-    }
-
-    function withdraw() external {
-        if (msg.sender != MAXLONG) revert OnlyMaxLong();
-        uint256 balance = IERC20(USDT).balanceOf(address(this));
-        bool ok = IERC20(USDT).transfer(MAXLONG, balance);
-        if (!ok) revert TransferFailed();
+        total += _amount;
+        emit Buy(msg.sender, _amount);
     }
 }
